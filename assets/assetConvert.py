@@ -1,6 +1,7 @@
 from PIL import Image
 import json
 import os
+import math
 
 progHeader = "PROGMEM const uint8_t "
 progTail = "[] = {"
@@ -75,18 +76,22 @@ for filename in os.listdir("assets\\maps"): #each map in the maps folder
   f.write("\r};\r\r")
 
 f.write("//  Begin sprite dump...\r")
-SPRITE_HEIGHT = 16
+f.write("namespace Spr_ {\r")
 for filename in os.listdir("assets\\sprites"):
 
   image = Image.open("assets\\sprites\\"+filename, "r") #open the bmp image file
+  print(filename+"\r")
 
-  f.write("//  "+filename+"\r")                             #filename comment
+  f.write("  //  "+filename+"\r")                             #filename comment
+  f.write("  ")
   f.write(progHeader+filename[:-4]+progTail)  #variable declaration
   #(variable name is filename minus the extension)
 
   # get image width
   # assume image height of 24 pixels
-  f.write("\r  "+str(image.width)+","+str(SPRITE_HEIGHT)+",\r")
+  sprite_height = int(math.ceil((image.height)/8)*8)
+  f.write("\r    "+str(image.width)+","+str(sprite_height)+",\r")
+  print(str(image.width)+", "+str(sprite_height))
 
   pix_val = list(image.getdata())                   #list of pixels (zero or 255)
 
@@ -100,7 +105,7 @@ for filename in os.listdir("assets\\sprites"):
   while (startX < image.width):
     startY = 0
     while (startY < image.height):
-      f.write("  ")
+      f.write("    ")
       #########################################################
       x = startX
       # this does a single tile
@@ -111,15 +116,17 @@ for filename in os.listdir("assets\\sprites"):
         while (y > (startY)) :
           y = y-1
           currchar = currchar << 1
-          if ( pix_val[(y*image.width)+x][0] > 128 ):
-            currchar = currchar|1
+          if (y < image.height) :
+            if ( pix_val[(y*image.width)+x][1] > 128 ):
+              currchar = currchar|1
         f.write(str(hex(currchar))+",")
         x = x+1
       #######################################################
       startY = startY+8
       f.write("\r")
     startX = x
-  f.write("};\r\r")
+  f.write("  };\r\r")
+f.write("};\r")         #namespace closer
 
 
   
